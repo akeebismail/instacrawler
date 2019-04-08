@@ -1,0 +1,1 @@
+from kibb.crawler import InsCrawler
