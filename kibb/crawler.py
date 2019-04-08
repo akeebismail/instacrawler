@@ -339,11 +339,67 @@ class InsCrawler(Logging):
         print('Done. Fetched %s posts.' % (min(len(posts), num)))
         return posts[:num]
 
-    def get_tags_with_username(self, tags, num):
-        url = '%s/p/%s' % (InsCrawler.URL,tags)
-        self.browser.get(url)
+    def get_user_handle(self, tag, number=100):
+        browser = self.browser
+        url = '%s/explore/tags/%s/' % (InsCrawler.URL, tag)
+        browser.get(url)
+        TIMEOUT = 600
+        browser = self.browser
+        key_set = set()
+        posts = []
+        usernames = []
+        pre_post_num = 0
+        wait_time = 1
+        pbar = tqdm(total=number)
+
+        def start_fetching(pre_post_num, wait_time):
+            ele_posts = browser.find_one('.v1Nh3 a')
+            ele_posts.click()
+            username = browser.find_one('.nJAx')
+            usernames.append({'username': username })
+            print(username)
 
 
+            if pre_post_num == len(usernames):
+                pbar.set_description('Wait for %s sec to get handles' % (wait_time))
+                sleep(wait_time)
+                pbar.set_description('fetching user handles')
+                wait_time *= 2
+                browser.scroll_up(300)
+            else:
+                wait_time = 1
 
+            pre_post_num = len(usernames)
+            browser.scroll_down()
 
+            return pre_post_num, wait_time
+
+        pbar.set_description('fetching')
+        while len(posts) < number and wait_time < TIMEOUT:
+            post_num, wait_time = start_fetching(pre_post_num, wait_time)
+            pbar.update(post_num - pre_post_num)
+            pre_post_num = post_num
+
+            loading = browser.find_one('.W1Bne')
+            if (not loading and wait_time > TIMEOUT/2):
+                break
+
+        pbar.close()
+        print('Done. Fetched %s posts.' % (min(len(posts), number)))
+        return usernames[:number]
+
+    def get_vendor_tags(self,tag):
+        usernames = self.get_user_handle(tag)
+        vendor = []
+        if usernames:
+            for username in usernames:
+                profile = self.get_user_profile(username)
+                sleep(1)
+                posts = self.get_user_posts(username)
+                vendor.append({
+                    'handle': username,
+                    'posts': posts
+                })
+        print(vendor)
+        return vendor
 

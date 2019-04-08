@@ -66,6 +66,9 @@ if __name__ == '__main__':
     elif args.mode == 'profile':
         arg_required('username')
         output(get_profile(args.username),args.output)
+    elif args.mode == 'vendor':
+        vendor = InsCrawler()
+        vendor.get_vendor_tags(args.tag)
     elif args.mode == 'hashtags':
         arg_required('tag')
         output(get_posts_by_hashtags(args.tag, args.number or 100, args.debug), args.output)
